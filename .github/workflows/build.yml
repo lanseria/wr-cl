@@ -116,10 +116,7 @@ jobs:
           ./wr-cl-windows.exe.tar.gz
           ./wr-cl-macos.tar.gz
         body: |
-          ## Word Document Content Replacer CLI Tool v${{ github.ref_name }}
-          
-          ### Release Date
-          $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          ## Word Document Content Replacer CLI Tool ${{ github.ref_name }}
           
           ### Installation
           1. Download the appropriate version for your operating system
