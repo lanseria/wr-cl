@@ -3,7 +3,7 @@
 block_cipher = None
 
 a = Analysis(
-    ['src/cli.py'],
+    ['main.py'],
     pathex=['/Users/zhangchao/Documents/Code/Supeset/wr-cl'],
     binaries=[],
     datas=[('config.json.template', 'config.json.template')],
@@ -39,5 +39,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='/Users/zhangchao/Documents/Code/Supeset/wr-cl/resources/icon.icns',
+    icon='/Users/zhangchao/Documents/Code/Supeset/wr-cl/resources/icons/icon.icns' if '/Users/zhangchao/Documents/Code/Supeset/wr-cl/resources/icons/icon.icns' else None,
 )

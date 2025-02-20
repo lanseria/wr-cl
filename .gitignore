@@ -1,8 +1,32 @@
 tests/output/
 tests/test_docs/
 .DS_Store
-build/
-dist/
 config.json
 output/
 input/
+# Build directories
+build/
+dist/
+*.spec
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# Resources
+# Uncomment these if you want to version control your icons
+# !resources/icons/icon.ico
+# !resources/icons/icon.icns

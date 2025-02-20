@@ -91,6 +91,7 @@ pip3 install -r requirements.txt
 4. 打包
 
 ```bash
+rm -rf dist/ build/
 /usr/bin/python3 build.py
 ```
 

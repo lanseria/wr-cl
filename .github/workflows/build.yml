@@ -27,53 +27,72 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Set up Python 3.9.6
+    - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: 3.9.6
+        python-version: '3.11'  # 更新到更新的Python版本
         cache: 'pip'
     
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+
+    # 创建资源目录并准备图标
+    - name: Prepare resources
+      shell: bash
+      run: |
+        mkdir -p resources/icons
+        
+        # 下载或创建示例图标
+        if [ "${{ matrix.os }}" = "windows-latest" ]; then
+          curl -o resources/icons/icon.ico https://www.python.org/static/favicon.ico
+        elif [ "${{ matrix.os }}" = "macos-latest" ]; then
+          # 对于 macOS，我们需要创建 .icns 文件
+          # 这里使用同样的图标，在实际使用时应替换为你的图标
+          curl -o resources/icons/icon.icns https://www.python.org/static/favicon.ico
+        fi
     
     - name: Build with PyInstaller
       run: |
         python build.py
       env:
         PYTHONPATH: ${{ github.workspace }}
+        PYTHONIOENCODING: utf-8
+        PYTHONUTF8: 1
 
     - name: Prepare artifact (Linux)
       if: matrix.os == 'ubuntu-latest'
       run: |
         chmod +x dist/wr-cl
         mv dist/wr-cl dist/${{ matrix.asset_name }}
-        cp config.json.template dist/config.json.template
+        cp config.json.template dist/
         cd dist && tar czf ../${{ matrix.asset_name }}.tar.gz ${{ matrix.asset_name }} config.json.template
 
     - name: Prepare artifact (Windows)
       if: matrix.os == 'windows-latest'
+      shell: pwsh  # 使用PowerShell以更好地处理路径
       run: |
-        move dist\wr-cl.exe dist\${{ matrix.asset_name }}
-        copy config.json.template dist\config.json.template
-        cd dist && tar -czf ..\${{ matrix.asset_name }}.tar.gz ${{ matrix.asset_name }} config.json.template
+        Move-Item dist\wr-cl.exe dist\${{ matrix.asset_name }}
+        Copy-Item config.json.template dist\
+        Set-Location dist
+        tar -czf ..\${{ matrix.asset_name }}.tar.gz ${{ matrix.asset_name }} config.json.template
 
     - name: Prepare artifact (macOS)
       if: matrix.os == 'macos-latest'
       run: |
         chmod +x dist/wr-cl
         mv dist/wr-cl dist/${{ matrix.asset_name }}
-        cp config.json.template dist/config.json.template
+        cp config.json.template dist/
         cd dist && tar czf ../${{ matrix.asset_name }}.tar.gz ${{ matrix.asset_name }} config.json.template
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v4  # 更新到 v4 版本
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.asset_name }}
         path: ${{ matrix.asset_name }}.tar.gz
         retention-days: 7
-        compression-level: 9  # 新特性：设置压缩级别
+        compression-level: 9
 
   release:
     needs: build
@@ -82,13 +101,12 @@ jobs:
     
     steps:
     - name: Download all artifacts
-      uses: actions/download-artifact@v4  # 更新到 v4 版本
+      uses: actions/download-artifact@v4
       with:
-        merge-multiple: true  # 新特性：合并多个制品
+        merge-multiple: true
       
     - name: Create Release
-      id: create_release
-      uses: softprops/action-gh-release@v2  # 更新到最新版本
+      uses: softprops/action-gh-release@v2
       with:
         name: Release ${{ github.ref_name }}
         draft: false
@@ -101,7 +119,7 @@ jobs:
           ## Word Document Content Replacer CLI Tool v${{ github.ref_name }}
           
           ### Release Date
-          ${{ github.event.repository.updated_at }}
+          $(date -u +"%Y-%m-%d %H:%M:%S UTC")
           
           ### Installation
           1. Download the appropriate version for your operating system
@@ -110,7 +128,7 @@ jobs:
              # Linux/macOS
              tar xzf wr-cl-*.tar.gz
              
-             # Windows
+             # Windows (PowerShell)
              tar -xzf wr-cl-windows.exe.tar.gz
              ```
           3. Copy `config.json.template` to `config.json` and modify as needed
@@ -134,14 +152,11 @@ jobs:
           - Windows/macOS/Linux
           - No additional dependencies required (bundled)
           
-          ### Changes in this release
-          - See commit history for details: ${{ github.event.repository.html_url }}/commits
-          
-          ### SHA256 Checksums
-          ```
-          ${{ hashFiles('**/wr-cl-*.tar.gz') }}
-          ```
+          ### Build Information
+          - Python 3.11
+          - Built with PyInstaller
+          - Platform-specific binaries included
 
 permissions:
-  contents: write  # 添加必要的权限声明
+  contents: write
   actions: read

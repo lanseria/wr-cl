@@ -12,6 +12,8 @@ DESCRIPTION = "Word Document Content Replacer"
 ROOT_DIR = Path(__file__).parent
 DIST_DIR = ROOT_DIR / "dist"
 BUILD_DIR = ROOT_DIR / "build"
+RESOURCES_DIR = ROOT_DIR / "resources"
+ICONS_DIR = RESOURCES_DIR / "icons"
 
 # Entry Point
 MAIN_SCRIPT = "src/cli.py"
@@ -27,9 +29,18 @@ HIDDEN_IMPORTS = [
     'concurrent.futures',
 ]
 
-# Icon File (Platform Specific)
+# Icon Files
 ICON_FILE = None
 if sys.platform.startswith('win'):
-    ICON_FILE = ROOT_DIR / "resources" / "icon.ico"
+    icon_path = ICONS_DIR / "icon.ico"
+    if icon_path.exists():
+        ICON_FILE = icon_path
 elif sys.platform.startswith('darwin'):
-    ICON_FILE = ROOT_DIR / "resources" / "icon.icns"
+    icon_path = ICONS_DIR / "icon.icns"
+    if icon_path.exists():
+        ICON_FILE = icon_path
+
+# Resource Files
+RESOURCE_FILES = [
+    (str(ICONS_DIR), 'icons')
+]
