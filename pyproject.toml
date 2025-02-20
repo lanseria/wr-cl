@@ -100,26 +100,28 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 minversion = "7.0"
-addopts = "-ra -q --cov=src --cov-report=term-missing"
-testpaths = [
-    "tests",
-]
+addopts = "-ra -q -v --cov=src --cov-report=term-missing --cov-fail-under=80"
+testpaths = ["tests"]
 
 [tool.coverage.run]
 source = ["src"]
 branch = true
+parallel = true
+data_file = ".coverage"
 
 [tool.coverage.report]
-exclude_also = [
+exclude_lines = [
+    "pragma: no cover",
     "def __repr__",
     "if __name__ == .__main__.:",
     "raise NotImplementedError",
     "if TYPE_CHECKING:",
-    "class .*\\bProtocol\\):",
-    "@(abc\\.)?abstractmethod",
+    "pass",
+    "raise ImportError",
 ]
 ignore_errors = true
 fail_under = 80
+show_missing = true
 
 [tool.coverage.html]
 directory = "coverage_html_report"

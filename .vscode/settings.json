@@ -1,6 +1,8 @@
 {
   "cSpell.words": [
-    "oxml"
+    "mypy",
+    "oxml",
+    "pytest"
   ],
   "[python]": {
     "editor.defaultFormatter": "ms-python.autopep8",

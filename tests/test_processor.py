@@ -1,8 +1,25 @@
 """Test cases for document processor."""
 import pytest
+import shutil
 from pathlib import Path
 from docx import Document
 from src.processor import DocumentProcessor
+
+
+@pytest.fixture(autouse=True)
+def clean_output_directory(output_dir):
+    """Clean output directory before and after each test."""
+    # Clean before test
+    if output_dir.exists():
+        shutil.rmtree(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Run test
+    yield
+
+    # Clean after test
+    if output_dir.exists():
+        shutil.rmtree(output_dir)
 
 
 def test_document_processor_initialization(test_config):
