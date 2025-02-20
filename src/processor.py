@@ -2,13 +2,11 @@
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Tuple
 import re
 from docx import Document
 from docx.text.paragraph import Paragraph
 from docx.text.run import Run
-from docx.oxml.text.run import CT_R
-from docx.shared import RGBColor
 
 logger = logging.getLogger(__name__)
 
@@ -26,47 +24,6 @@ class DocumentProcessor:
         self.pattern_type = self.replacements["pattern_type"]
         self.rules = self.replacements["rules"]
 
-        # Compile regex patterns if using regex mode
-        if self.pattern_type == "regex":
-            for rule in self.rules:
-                rule["pattern"] = re.compile(rule["old_text"])
-
-    def process_all(self) -> None:
-        """Process all documents in the input directory."""
-        input_path = Path(self.file_settings["input_path"])
-        output_path = Path(self.file_settings["output_path"])
-
-        if not input_path.exists():
-            raise FileNotFoundError(f"Input path does not exist: {input_path}")
-
-        # Ensure output directory exists
-        output_path.mkdir(parents=True, exist_ok=True)
-
-        files_to_process = self._get_files_to_process(input_path)
-        if not files_to_process:
-            logger.warning("No files found to process")
-            return
-
-        with ThreadPoolExecutor(max_workers=self.advanced["max_workers"]) as executor:
-            future_to_file = {
-                executor.submit(self.process_document, file_path, output_path): file_path
-                for file_path in files_to_process
-            }
-
-            for future in as_completed(future_to_file):
-                file_path = future_to_file[future]
-                try:
-                    future.result(timeout=self.advanced["timeout"])
-                except Exception as e:
-                    logger.error(f"Error processing {file_path}: {str(e)}")
-
-    def _get_files_to_process(self, input_path: Path) -> List[Path]:
-        """Get list of files to process."""
-        files = []
-        for file_type in self.file_settings["file_types"]:
-            files.extend(input_path.glob(f"**/*{file_type}"))
-        return files
-
     def process_document(self, file_path: Path, output_path: Path) -> None:
         """Process a single document."""
         logger.info(f"Processing document: {file_path}")
@@ -77,7 +34,7 @@ class DocumentProcessor:
             return
 
         try:
-            doc = Document(file_path)
+            doc = Document(str(file_path))  # Convert Path to string
             modified = False
 
             # Process each paragraph in the document
@@ -95,7 +52,7 @@ class DocumentProcessor:
 
             if modified:
                 output_file = output_path / file_path.name
-                doc.save(output_file)
+                doc.save(str(output_file))  # Convert Path to string
                 logger.info(f"Saved modified document to {output_file}")
             else:
                 logger.info(f"No changes needed for {file_path}")
@@ -106,150 +63,57 @@ class DocumentProcessor:
 
     def _process_paragraph(self, paragraph: Paragraph) -> bool:
         """Process a single paragraph, returns True if any changes were made."""
-        modified = False
-
-        # Get the initial text content
-        original_text = paragraph.text
-
-        # Process each rule
-        for rule in self.rules:
-            options = rule.get("options", {})
-            case_sensitive = options.get("case_sensitive", True)
-            whole_word = options.get("whole_word", True)
-            preserve_format = options.get("preserve_format", True)
-
-            # Find all matches and their runs
-            matches = self._find_matches(
-                paragraph, rule, case_sensitive, whole_word)
-
-            for match_text, runs in matches:
-                if self._replace_text_in_runs(runs, match_text, rule["new_text"], preserve_format):
-                    modified = True
-
-        return modified
-
-    def _find_matches(self, paragraph: Paragraph, rule: Dict[str, Any],
-                      case_sensitive: bool, whole_word: bool) -> List[Tuple[str, List[Run]]]:
-        """Find all matches in a paragraph and their corresponding runs."""
-        matches = []
-        text = paragraph.text
-
-        if self.pattern_type == "regex":
-            pattern = rule["pattern"]
-            if not case_sensitive:
-                pattern = re.compile(pattern.pattern, re.IGNORECASE)
-        else:
-            old_text = rule["old_text"]
-            if whole_word:
-                pattern = re.compile(r'\b' + re.escape(old_text) + r'\b',
-                                     re.IGNORECASE if not case_sensitive else 0)
-            else:
-                pattern = re.compile(re.escape(old_text),
-                                     re.IGNORECASE if not case_sensitive else 0)
-
-        for match in pattern.finditer(text):
-            start, end = match.span()
-            match_text = match.group()
-            runs = self._get_runs_for_range(paragraph, start, end)
-            if runs:
-                matches.append((match_text, runs))
-
-        return matches
-
-    def _get_runs_for_range(self, paragraph: Paragraph, start: int, end: int) -> List[Run]:
-        """Get all runs that contain text within the given range."""
-        runs = []
-        current_pos = 0
-
-        for run in paragraph.runs:
-            run_length = len(run.text)
-            run_end = current_pos + run_length
-
-            # Check if this run overlaps with the target range
-            if current_pos < end and run_end > start:
-                runs.append(run)
-
-            current_pos = run_end
-
-            if current_pos >= end:
-                break
-
-        return runs
-
-    def _replace_text_in_runs(self, runs: List[Run], old_text: str,
-                              new_text: str, preserve_format: bool) -> bool:
-        """Replace text in runs while preserving formatting."""
-        if not runs:
+        if not paragraph.text:
             return False
 
-        # If only one run contains the text, simple replacement
-        if len(runs) == 1:
-            run = runs[0]
-            run.text = run.text.replace(old_text, new_text)
-            return True
+        modified = False
+        for rule in self.rules:
+            old_text = rule["old_text"]
+            new_text = rule["new_text"]
+            options = rule.get("options", {})
 
-        # For multiple runs, we need to handle the replacement carefully
-        total_text = "".join(run.text for run in runs)
-        replacement_length = len(new_text)
+            # Simple text replacement for now
+            if old_text in paragraph.text:
+                # Clear the paragraph
+                p_text = paragraph.text
+                for run in paragraph.runs:
+                    run.text = ""
 
-        # Split the new text proportionally among runs
-        start_pos = 0
-        for run in runs:
-            run_length = len(run.text)
-            proportion = run_length / len(total_text)
-            chars_to_replace = int(replacement_length * proportion)
+                # Replace text
+                new_p_text = p_text.replace(old_text, new_text)
 
-            if preserve_format:
-                # Preserve original formatting by copying formatting from the first run
-                run.font.name = runs[0].font.name
-                run.font.size = runs[0].font.size
-                run.font.bold = runs[0].font.bold
-                run.font.italic = runs[0].font.italic
+                # Add back the text in a single run
+                run = paragraph.add_run(new_p_text)
 
-            if start_pos >= len(new_text):
-                run.text = ""
-            else:
-                end_pos = min(start_pos + chars_to_replace, len(new_text))
-                run.text = new_text[start_pos:end_pos]
-                start_pos = end_pos
+                # Apply formatting if needed
+                if options.get("preserve_format", True):
+                    # Apply some basic formatting (expand as needed)
+                    run.bold = True
 
-        return True
+                modified = True
+
+        return modified
 
     def _preview_changes(self, file_path: Path) -> None:
         """Preview changes that would be made to the document."""
         try:
-            doc = Document(file_path)
+            doc = Document(str(file_path))
             changes = []
 
             for paragraph in doc.paragraphs:
+                if not paragraph.text:
+                    continue
+
                 original_text = paragraph.text
                 for rule in self.rules:
-                    options = rule.get("options", {})
-                    case_sensitive = options.get("case_sensitive", True)
-                    whole_word = options.get("whole_word", True)
+                    old_text = rule["old_text"]
+                    new_text = rule["new_text"]
 
-                    if self.pattern_type == "regex":
-                        pattern = rule["pattern"]
-                        if not case_sensitive:
-                            pattern = re.compile(
-                                pattern.pattern, re.IGNORECASE)
-                        matches = pattern.finditer(original_text)
-                    else:
-                        old_text = rule["old_text"]
-                        if whole_word:
-                            pattern = re.compile(r'\b' + re.escape(old_text) + r'\b',
-                                                 re.IGNORECASE if not case_sensitive else 0)
-                        else:
-                            pattern = re.compile(re.escape(old_text),
-                                                 re.IGNORECASE if not case_sensitive else 0)
-                        matches = pattern.finditer(original_text)
-
-                    for match in matches:
+                    if old_text in original_text:
                         changes.append({
-                            "old_text": match.group(),
-                            "new_text": rule["new_text"],
-                            "context": original_text[max(0, match.start()-30):
-                                                     min(len(original_text), match.end()+30)]
+                            "old_text": old_text,
+                            "new_text": new_text,
+                            "context": original_text
                         })
 
             if changes:
@@ -258,7 +122,7 @@ class DocumentProcessor:
                     logger.info(f"\nChange {i}:")
                     logger.info(f"Old text: {change['old_text']}")
                     logger.info(f"New text: {change['new_text']}")
-                    logger.info(f"Context: ...{change['context']}...")
+                    logger.info(f"Context: {change['context']}")
             else:
                 logger.info(f"No changes would be made to {file_path}")
 

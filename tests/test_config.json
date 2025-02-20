@@ -14,11 +14,11 @@
     ]
   },
   "file_settings": {
-    "input_path": "./tests/test_docs",
+    "input_path": "tests/test_docs",
     "file_types": [
       ".docx"
     ],
-    "output_path": "./tests/output"
+    "output_path": "tests/output"
   },
   "advanced": {
     "max_workers": 1,
