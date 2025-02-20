@@ -5,8 +5,9 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 
-from . import config
-from . import processor
+# 修改导入方式
+from src import config
+from src import processor
 
 
 def setup_logging(log_level: str) -> None:
