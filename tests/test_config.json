@@ -1,0 +1,27 @@
+{
+  "replacements": {
+    "pattern_type": "plain",
+    "rules": [
+      {
+        "old_text": "公司A",
+        "new_text": "DeepSeek",
+        "options": {
+          "case_sensitive": true,
+          "whole_word": true,
+          "preserve_format": true
+        }
+      }
+    ]
+  },
+  "file_settings": {
+    "input_path": "./tests/test_docs",
+    "file_types": [
+      ".docx"
+    ],
+    "output_path": "./tests/output"
+  },
+  "advanced": {
+    "max_workers": 1,
+    "timeout": 30
+  }
+}
