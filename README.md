@@ -88,6 +88,26 @@ pip3 install -r requirements.txt
 /usr/bin/python3 -m pytest tests/ -v
 ```
 
+4. 打包
+
+```bash
+/usr/bin/python3 build.py
+```
+
+5. 运行
+
+```bash
+# 复制配置模板
+cp config.json.template config.json
+# 编辑配置文件，修改所需的替换规则
+
+# Windows
+dist\wr-cl.exe --config config.json
+
+# macOS/Linux
+./dist/wr-cl --config config.json
+```
+
 ## 许可证
 
 MIT

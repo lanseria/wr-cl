@@ -1,0 +1,25 @@
+{
+    "replacements": {
+        "pattern_type": "plain",
+        "rules": [
+            {
+                "old_text": "公司A",
+                "new_text": "新公司名称",
+                "options": {
+                    "case_sensitive": true,
+                    "whole_word": true,
+                    "preserve_format": true
+                }
+            }
+        ]
+    },
+    "file_settings": {
+        "input_path": "./input",
+        "output_path": "./output",
+        "file_types": [".docx"]
+    },
+    "advanced": {
+        "max_workers": 4,
+        "timeout": 30
+    }
+}
