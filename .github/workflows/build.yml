@@ -38,11 +38,11 @@ jobs:
     - name: Install build dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install hatch
+        python -m pip install hatch pyinstaller
 
-    - name: Install project with build dependencies
+    - name: Install project
       run: |
-        pip install '.[build]'
+        pip install -e '.[build]'
     
     # 创建资源目录并准备图标
     - name: Prepare resources
@@ -59,18 +59,24 @@ jobs:
     
     - name: Build with PyInstaller
       run: |
-        hatch run build:pyinstaller
+        python build.py
       env:
         PYTHONPATH: ${{ github.workspace }}
         PYTHONIOENCODING: utf-8
         PYTHONUTF8: 1
+
+    - name: Get current timestamp
+      id: timestamp
+      run: |
+        echo "timestamp=$(date -u +'%Y-%m-%d %H:%M:%S')" >> $GITHUB_OUTPUT
+      shell: bash
 
     - name: Prepare artifact (Linux)
       if: matrix.os == 'ubuntu-latest'
       run: |
         chmod +x dist/wr-cl
         mv dist/wr-cl dist/${{ matrix.asset_name }}
-        cp $(hatch path)/share/wr-cl/config.json.template dist/
+        cp config.json.template dist/
         cd dist && tar czf ../${{ matrix.asset_name }}.tar.gz ${{ matrix.asset_name }} config.json.template
 
     - name: Prepare artifact (Windows)
@@ -78,8 +84,7 @@ jobs:
       shell: pwsh
       run: |
         Move-Item dist\wr-cl.exe dist\${{ matrix.asset_name }}
-        $hatchPath = (hatch path)
-        Copy-Item "$hatchPath\share\wr-cl\config.json.template" dist\
+        Copy-Item config.json.template dist\
         Set-Location dist
         tar -czf ..\${{ matrix.asset_name }}.tar.gz ${{ matrix.asset_name }} config.json.template
 
@@ -88,7 +93,7 @@ jobs:
       run: |
         chmod +x dist/wr-cl
         mv dist/wr-cl dist/${{ matrix.asset_name }}
-        cp $(hatch path)/share/wr-cl/config.json.template dist/
+        cp config.json.template dist/
         cd dist && tar czf ../${{ matrix.asset_name }}.tar.gz ${{ matrix.asset_name }} config.json.template
 
     - name: Upload artifact
@@ -169,17 +174,15 @@ jobs:
           - No additional dependencies required (bundled)
           
           ### Build Information
-          - Built with Python ${{ matrix.python-version }}
+          - Built with Python 3.11
           - PyInstaller bundle
           - Build date: ${{ steps.date.outputs.DATE }}
+          - Build commit: ${{ github.sha }}
           
           ### SHA256 Checksums
           ```
           ${{ hashFiles('*.tar.gz') }}
           ```
-          
-          ### Changes
-          ${{ github.event.release.body }}
 
 permissions:
   contents: write

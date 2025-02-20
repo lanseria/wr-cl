@@ -168,8 +168,8 @@ exclude = [
 ]
 
 [tool.hatch.build.targets.wheel.shared-data]
-"resources/icons" = "share/wr-cl/icons"
 "config.json.template" = "share/wr-cl/config.json.template"
+"resources/icons" = "share/wr-cl/icons"
 
 [tool.hatch.envs.build]
 dependencies = [
