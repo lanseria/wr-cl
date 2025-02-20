@@ -85,7 +85,7 @@ pip3 install -r requirements.txt
 3. 运行测试：
 
 ```bash
-/usr/bin/python3 -m pytest tests/
+/usr/bin/python3 -m pytest tests/ -v
 ```
 
 ## 许可证

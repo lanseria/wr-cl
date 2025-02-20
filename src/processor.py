@@ -3,9 +3,11 @@ import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Dict, Any, List
+from docx.text.paragraph import Paragraph
 from docx import Document
 
-logger = logging.getLogger(__name__)
+# 在文件开头添加或修改 logger 定义
+logger = logging.getLogger("src.processor")
 
 
 class DocumentProcessor:
@@ -20,6 +22,23 @@ class DocumentProcessor:
         self.advanced = config["advanced"]
         self.pattern_type = self.replacements["pattern_type"]
         self.rules = self.replacements["rules"]
+
+    def _get_files_to_process(self, input_path: Path) -> List[Path]:
+        """Get list of files to process based on configured file types."""
+        files = []
+        for file_type in self.file_settings["file_types"]:
+            # 确保文件类型以点号开头
+            if not file_type.startswith('.'):
+                file_type = f'.{file_type}'
+            # 使用 rglob 来递归搜索所有匹配的文件
+            files.extend(input_path.rglob(f'*{file_type}'))
+
+        # 记录找到的文件
+        logger.info(f"Found {len(files)} files to process in {input_path}")
+        for file in files:
+            logger.debug(f"Found file: {file}")
+
+        return files
 
     def process_all(self) -> None:
         """Process all documents in the input directory."""
@@ -119,3 +138,39 @@ class DocumentProcessor:
                 modified = True
 
         return modified
+
+    def _preview_changes(self, file_path: Path) -> None:
+        """Preview changes that would be made to the document."""
+        try:
+            doc = Document(str(file_path))
+            changes = []
+
+            for paragraph in doc.paragraphs:
+                if not paragraph.text:
+                    continue
+
+                original_text = paragraph.text
+                for rule in self.rules:
+                    old_text = rule["old_text"]
+                    new_text = rule["new_text"]
+
+                    if old_text in original_text:
+                        changes.append({
+                            "old_text": old_text,
+                            "new_text": new_text,
+                            "context": original_text
+                        })
+
+            if changes:
+                logger.info(f"\nPreview of changes for {file_path}:")
+                for i, change in enumerate(changes, 1):
+                    logger.info(f"\nChange {i}:")
+                    logger.info(f"Old text: {change['old_text']}")
+                    logger.info(f"New text: {change['new_text']}")
+                    logger.info(f"Context: {change['context']}")
+            else:
+                logger.info(f"No changes would be made to {file_path}")
+
+        except Exception as e:
+            logger.error(f"Error previewing changes for {file_path}: {str(e)}")
+            raise

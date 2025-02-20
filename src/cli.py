@@ -3,6 +3,7 @@ import argparse
 import logging
 import sys
 from pathlib import Path
+from typing import List, Optional
 
 from . import config
 from . import processor
@@ -14,20 +15,24 @@ def setup_logging(log_level: str) -> None:
     if not isinstance(numeric_level, int):
         raise ValueError(f'Invalid log level: {log_level}')
 
-    # Remove any existing handlers
+    # Remove any existing handlers to avoid duplicate logs
     root = logging.getLogger()
-    if root.handlers:
-        for handler in root.handlers:
-            root.removeHandler(handler)
+    for handler in root.handlers[:]:
+        root.removeHandler(handler)
 
     # Set up basic configuration
     logging.basicConfig(
         level=numeric_level,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        force=True  # Force reconfiguration of the root logger
     )
 
+    # Ensure our package logger is set to the correct level
+    logger = logging.getLogger("src")
+    logger.setLevel(numeric_level)
 
-def main() -> int:
+
+def main(args: Optional[List[str]] = None) -> int:
     """Main entry point for the CLI."""
     parser = argparse.ArgumentParser(
         description="Word document content replacer command line tool"
@@ -50,17 +55,18 @@ def main() -> int:
         help="Set the logging level",
     )
 
-    args = parser.parse_args()
+    # Parse arguments
+    parsed_args = parser.parse_args(args)
 
     # Setup logging
-    setup_logging(args.log_level)
+    setup_logging(parsed_args.log_level)
     logger = logging.getLogger(__name__)
 
     try:
         # Load configuration
-        config_path = Path(args.config)
+        config_path = Path(parsed_args.config)
         if not config_path.exists():
-            logger.error(f"Configuration file not found: {args.config}")
+            logger.error(f"Configuration file not found: {parsed_args.config}")
             return 1
 
         cfg = config.load_config(str(config_path))
@@ -72,9 +78,11 @@ def main() -> int:
             return 1
 
         # Initialize processor
-        doc_processor = processor.DocumentProcessor(cfg, dry_run=args.dry_run)
+        doc_processor = processor.DocumentProcessor(
+            cfg, dry_run=parsed_args.dry_run)
 
         # Process documents
+        logger.debug("Starting document processing...")
         doc_processor.process_all()
         logger.info("Processing completed successfully")
 
