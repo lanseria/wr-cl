@@ -26,18 +26,24 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    
+      with:
+        fetch-depth: 0
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.11'  # 更新到更新的Python版本
+        python-version: '3.11'
         cache: 'pip'
     
-    - name: Install dependencies
+    - name: Install build dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install hatch
 
+    - name: Install project with build dependencies
+      run: |
+        pip install '.[build]'
+    
     # 创建资源目录并准备图标
     - name: Prepare resources
       shell: bash
@@ -48,14 +54,12 @@ jobs:
         if [ "${{ matrix.os }}" = "windows-latest" ]; then
           curl -o resources/icons/icon.ico https://www.python.org/static/favicon.ico
         elif [ "${{ matrix.os }}" = "macos-latest" ]; then
-          # 对于 macOS，我们需要创建 .icns 文件
-          # 这里使用同样的图标，在实际使用时应替换为你的图标
           curl -o resources/icons/icon.icns https://www.python.org/static/favicon.ico
         fi
     
     - name: Build with PyInstaller
       run: |
-        python build.py
+        hatch run build:pyinstaller
       env:
         PYTHONPATH: ${{ github.workspace }}
         PYTHONIOENCODING: utf-8
@@ -66,15 +70,16 @@ jobs:
       run: |
         chmod +x dist/wr-cl
         mv dist/wr-cl dist/${{ matrix.asset_name }}
-        cp config.json.template dist/
+        cp $(hatch path)/share/wr-cl/config.json.template dist/
         cd dist && tar czf ../${{ matrix.asset_name }}.tar.gz ${{ matrix.asset_name }} config.json.template
 
     - name: Prepare artifact (Windows)
       if: matrix.os == 'windows-latest'
-      shell: pwsh  # 使用PowerShell以更好地处理路径
+      shell: pwsh
       run: |
         Move-Item dist\wr-cl.exe dist\${{ matrix.asset_name }}
-        Copy-Item config.json.template dist\
+        $hatchPath = (hatch path)
+        Copy-Item "$hatchPath\share\wr-cl\config.json.template" dist\
         Set-Location dist
         tar -czf ..\${{ matrix.asset_name }}.tar.gz ${{ matrix.asset_name }} config.json.template
 
@@ -83,7 +88,7 @@ jobs:
       run: |
         chmod +x dist/wr-cl
         mv dist/wr-cl dist/${{ matrix.asset_name }}
-        cp config.json.template dist/
+        cp $(hatch path)/share/wr-cl/config.json.template dist/
         cd dist && tar czf ../${{ matrix.asset_name }}.tar.gz ${{ matrix.asset_name }} config.json.template
 
     - name: Upload artifact
@@ -100,10 +105,22 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     
     steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
     - name: Download all artifacts
       uses: actions/download-artifact@v4
       with:
         merge-multiple: true
+    
+    - name: Get version from tag
+      id: get_version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+    
+    - name: Get current date
+      id: date
+      run: echo "DATE=$(date -u +'%Y-%m-%d')" >> $GITHUB_OUTPUT
       
     - name: Create Release
       uses: softprops/action-gh-release@v2
@@ -116,7 +133,9 @@ jobs:
           ./wr-cl-windows.exe.tar.gz
           ./wr-cl-macos.tar.gz
         body: |
-          ## Word Document Content Replacer CLI Tool ${{ github.ref_name }}
+          ## Word Document Content Replacer CLI Tool v${{ steps.get_version.outputs.VERSION }}
+          
+          **Release Date:** ${{ steps.date.outputs.DATE }}
           
           ### Installation
           1. Download the appropriate version for your operating system
@@ -150,9 +169,17 @@ jobs:
           - No additional dependencies required (bundled)
           
           ### Build Information
-          - Python 3.11
-          - Built with PyInstaller
-          - Platform-specific binaries included
+          - Built with Python ${{ matrix.python-version }}
+          - PyInstaller bundle
+          - Build date: ${{ steps.date.outputs.DATE }}
+          
+          ### SHA256 Checksums
+          ```
+          ${{ hashFiles('*.tar.gz') }}
+          ```
+          
+          ### Changes
+          ${{ github.event.release.body }}
 
 permissions:
   contents: write

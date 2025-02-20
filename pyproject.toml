@@ -1,0 +1,181 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "wr-cl"
+version = "1.0.0"
+description = "Word Document Content Replacer Command Line Tool"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [
+    { name = "lanseria", email = "zhangchao564265135@hotmail.com" }
+]
+maintainers = [
+    { name = "lanseria", email = "zhangchao564265135@hotmail.com" }
+]
+keywords = ["word", "docx", "cli", "text-processing"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Office/Business",
+    "Topic :: Text Processing",
+    "Topic :: Utilities"
+]
+dependencies = [
+    "python-docx>=0.8.11",
+    "click>=8.1.7",
+    "rich>=13.7.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.4",
+    "pytest-cov>=4.1.0",
+    "black>=24.1.1",
+    "isort>=5.13.2",
+    "flake8>=7.0.0",
+    "mypy>=1.8.0",
+    "pre-commit>=3.6.0",
+    "tox>=4.12.1",
+]
+build = [
+    "pyinstaller>=6.3.0",
+    "pillow>=10.2.0",  # 用于生成图标
+]
+
+[project.urls]
+Homepage = "https://github.com/lanseria/wr-cl"
+Documentation = "https://github.com/lanseria/wr-cl/blob/main/README.md"
+Repository = "https://github.com/lanseria/wr-cl.git"
+"Bug Tracker" = "https://github.com/lanseria/wr-cl/issues"
+Changelog = "https://github.com/lanseria/wr-cl/blob/main/CHANGELOG.md"
+
+[project.scripts]
+wr-cl = "src.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.hatch.version]
+path = "src/__init__.py"
+
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+line_length = 88
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+
+[[tool.mypy.overrides]]
+module = ["docx.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q --cov=src --cov-report=term-missing"
+testpaths = [
+    "tests",
+]
+
+[tool.coverage.run]
+source = ["src"]
+branch = true
+
+[tool.coverage.report]
+exclude_also = [
+    "def __repr__",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+ignore_errors = true
+fail_under = 80
+
+[tool.coverage.html]
+directory = "coverage_html_report"
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+envlist = py311, lint, type
+isolated_build = True
+
+[testenv]
+deps = 
+    pytest>=7.4.4
+    pytest-cov>=4.1.0
+commands =
+    pytest {posargs:tests}
+
+[testenv:lint]
+deps =
+    black>=24.1.1
+    isort>=5.13.2
+    flake8>=7.0.0
+commands =
+    black .
+    isort .
+    flake8 .
+
+[testenv:type]
+deps =
+    mypy>=1.8.0
+commands =
+    mypy src tests
+"""
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "/.github",
+    "/docs",
+    "/tests",
+    ".gitignore",
+    ".pre-commit-config.yaml",
+    "tox.ini",
+]
+
+[tool.hatch.build.targets.wheel.shared-data]
+"resources/icons" = "share/wr-cl/icons"
+"config.json.template" = "share/wr-cl/config.json.template"
+
+[tool.hatch.envs.build]
+dependencies = [
+    "pyinstaller>=6.3.0",
+    "pillow>=10.2.0",
+]
+
+[tool.hatch.envs.build.scripts]
+pyinstaller = "python build.py"

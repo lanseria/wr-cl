@@ -70,20 +70,35 @@ wr-cl --config config.json
 ```bash
 git clone https://github.com/lanseria/wr-cl.git
 cd wr-cl
-# /usr/bin/python3 -m pip install -r requirements-dev.txt
 ```
 
 2. 安装依赖：
 
 ```bash
-pip3 install -r requirements.txt
-# /usr/bin/python3 -m pip install -r requirements.txt
+# 创建虚拟环境（venv 是 Python 内置工具）
+python3 -m venv myenv
+# macOS/Linux
+source myenv/bin/activate
+
+# Windows (PowerShell)
+.\myenv\Scripts\Activate.ps1
+
+pip install .
+
+pip install ".[dev]"
+
+pip install ".[build]"
+
+deactivate
 ```
 
 3. 运行测试：
 
 ```bash
-/usr/bin/python3 -m pytest tests/ -v
+pytest
+# 运行代码格式化
+black .
+isort .
 ```
 
 4. 打包
