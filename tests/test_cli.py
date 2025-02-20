@@ -27,11 +27,13 @@ def test_cli_with_config(test_config, sample_docx, output_dir, monkeypatch, capl
 
     # Run CLI
     result = main()
-    assert result == 0
 
-    # Check logs
-    assert any(
-        "Processing document" in record.message for record in caplog.records)
+    # Check return code and logs
+    assert result == 0, "CLI should return 0 on successful execution"
+    assert any("Processing document" in record.message for record in caplog.records), \
+        "Expected 'Processing document' in logs"
+    assert any("Processing completed successfully" in record.message for record in caplog.records), \
+        "Expected 'Processing completed successfully' in logs"
 
 
 def test_cli_dry_run(test_config, sample_docx, output_dir, monkeypatch, caplog):
@@ -57,7 +59,10 @@ def test_cli_dry_run(test_config, sample_docx, output_dir, monkeypatch, caplog):
 
     # Run CLI
     result = main()
-    assert result == 0
 
-    # Check logs
-    assert any("Dry run" in record.message for record in caplog.records)
+    # Check return code and logs
+    assert result == 0, "CLI should return 0 on successful dry run"
+    assert any("Dry run" in record.message for record in caplog.records), \
+        "Expected 'Dry run' in logs"
+    assert any("Processing completed successfully" in record.message for record in caplog.records), \
+        "Expected 'Processing completed successfully' in logs"

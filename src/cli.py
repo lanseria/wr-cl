@@ -58,13 +58,25 @@ def main() -> int:
 
     try:
         # Load configuration
-        cfg = config.load_config(args.config)
+        config_path = Path(args.config)
+        if not config_path.exists():
+            logger.error(f"Configuration file not found: {args.config}")
+            return 1
+
+        cfg = config.load_config(str(config_path))
+
+        # Validate configuration
+        input_path = Path(cfg["file_settings"]["input_path"])
+        if not input_path.exists():
+            logger.error(f"Input directory not found: {input_path}")
+            return 1
 
         # Initialize processor
         doc_processor = processor.DocumentProcessor(cfg, dry_run=args.dry_run)
 
         # Process documents
         doc_processor.process_all()
+        logger.info("Processing completed successfully")
 
         return 0
 
