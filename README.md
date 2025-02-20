@@ -16,11 +16,9 @@ word replacer command line tool
 - 支持多线程处理，加速处理速度
 - 使用 github actions 自动打包 windows/macos/linux 各个平台的cli文件，供下载
 
-## 安装
+## 下载解压
 
-```bash
-pip install wr-cl
-```
+[下载地址](https://github.com/lanseria/wr-cl/releases)
 
 ## 使用方法
 
