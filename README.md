@@ -109,6 +109,13 @@ dist\wr-cl.exe --config config.json
 ./dist/wr-cl --config config.json
 ```
 
+发布
+
+```bash
+git tag -a v1.0.0 -m "Release version 1.0.0"
+git push origin v1.0.0
+```
+
 ## 许可证
 
 MIT
