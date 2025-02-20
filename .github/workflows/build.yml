@@ -25,10 +25,10 @@ jobs:
             asset_name: wr-cl-macos
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Set up Python 3.9.6
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: 3.9.6
         cache: 'pip'
@@ -68,11 +68,12 @@ jobs:
         cd dist && tar czf ../${{ matrix.asset_name }}.tar.gz ${{ matrix.asset_name }} config.json.template
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4  # 更新到 v4 版本
       with:
         name: ${{ matrix.asset_name }}
         path: ${{ matrix.asset_name }}.tar.gz
         retention-days: 7
+        compression-level: 9  # 新特性：设置压缩级别
 
   release:
     needs: build
@@ -81,25 +82,37 @@ jobs:
     
     steps:
     - name: Download all artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4  # 更新到 v4 版本
+      with:
+        merge-multiple: true  # 新特性：合并多个制品
       
     - name: Create Release
       id: create_release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2  # 更新到最新版本
       with:
         name: Release ${{ github.ref_name }}
         draft: false
         prerelease: false
         files: |
-          ./wr-cl-linux/wr-cl-linux.tar.gz
-          ./wr-cl-windows.exe/wr-cl-windows.exe.tar.gz
-          ./wr-cl-macos/wr-cl-macos.tar.gz
+          ./wr-cl-linux.tar.gz
+          ./wr-cl-windows.exe.tar.gz
+          ./wr-cl-macos.tar.gz
         body: |
-          ## Word Document Content Replacer CLI Tool
+          ## Word Document Content Replacer CLI Tool v${{ github.ref_name }}
+          
+          ### Release Date
+          ${{ github.event.repository.updated_at }}
           
           ### Installation
           1. Download the appropriate version for your operating system
-          2. Extract the archive
+          2. Extract the archive:
+             ```bash
+             # Linux/macOS
+             tar xzf wr-cl-*.tar.gz
+             
+             # Windows
+             tar -xzf wr-cl-windows.exe.tar.gz
+             ```
           3. Copy `config.json.template` to `config.json` and modify as needed
           
           ### Usage
@@ -122,4 +135,13 @@ jobs:
           - No additional dependencies required (bundled)
           
           ### Changes in this release
-          - See commit history for details
+          - See commit history for details: ${{ github.event.repository.html_url }}/commits
+          
+          ### SHA256 Checksums
+          ```
+          ${{ hashFiles('**/wr-cl-*.tar.gz') }}
+          ```
+
+permissions:
+  contents: write  # 添加必要的权限声明
+  actions: read
