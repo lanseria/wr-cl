@@ -18,11 +18,11 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         include:
           - os: ubuntu-latest
-            asset_name: wr-cl
+            asset_name: wr-cl-linux
           - os: windows-latest
-            asset_name: wr-cl.exe
+            asset_name: wr-cl-windows.exe
           - os: macos-latest
-            asset_name: wr-cl
+            asset_name: wr-cl-macos
 
     steps:
     - uses: actions/checkout@v4
@@ -82,7 +82,6 @@ jobs:
       if: matrix.os == 'windows-latest'
       shell: pwsh
       run: |
-        Move-Item dist\wr-cl.exe dist\${{ matrix.asset_name }}
         Copy-Item config.json.template dist\
         Set-Location dist
         tar -czf ..\${{ matrix.asset_name }}.tar.gz ${{ matrix.asset_name }} config.json.template
@@ -91,7 +90,6 @@ jobs:
       if: matrix.os == 'macos-latest'
       run: |
         chmod +x dist/wr-cl
-        mv dist/wr-cl dist/${{ matrix.asset_name }}
         cp config.json.template dist/
         cd dist && tar czf ../${{ matrix.asset_name }}.tar.gz ${{ matrix.asset_name }} config.json.template
 
