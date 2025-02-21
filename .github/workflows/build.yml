@@ -18,11 +18,11 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         include:
           - os: ubuntu-latest
-            asset_name: wr-cl-linux
+            asset_name: wr-cl
           - os: windows-latest
-            asset_name: wr-cl-windows.exe
+            asset_name: wr-cl.exe
           - os: macos-latest
-            asset_name: wr-cl-macos
+            asset_name: wr-cl
 
     steps:
     - uses: actions/checkout@v4
