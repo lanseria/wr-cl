@@ -125,8 +125,10 @@ dist\wr-cl.exe --config config.json
 发布
 
 ```bash
-git tag -a v1.0.0 -m "Release version 1.0.0"
-git push origin v1.0.0
+git tag -d v1.1.0 
+git push origin --delete v1.1.0
+git tag -a v1.1.0 -m "Release version 1.1.0"
+git push origin v1.1.0
 ```
 
 ## 许可证

@@ -75,7 +75,6 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         chmod +x dist/wr-cl
-        mv dist/wr-cl dist/${{ matrix.asset_name }}
         cp config.json.template dist/
         cd dist && tar czf ../${{ matrix.asset_name }}.tar.gz ${{ matrix.asset_name }} config.json.template
 
