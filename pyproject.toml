@@ -29,9 +29,9 @@ classifiers = [
     "Topic :: Utilities"
 ]
 dependencies = [
-    "python-docx>=0.8.11",
-    "click>=8.1.7",
-    "rich>=13.7.0",
+    "python-docx>=1.1.2",
+    "click>=8.1.8",
+    "rich>=13.9.4",
 ]
 
 [project.optional-dependencies]

@@ -97,13 +97,13 @@ class DocumentProcessor:
                                 modified = True
 
             # 处理所有分节（文献[9]）
-                for i, section in enumerate(doc.sections):
-                    if i > 0 and not section.different_first_page_header_footer:
-                        section.header.is_linked_to_previous = False
-                        section.footer.is_linked_to_previous = False
+                # for i, section in enumerate(doc.sections):
+                    # if i > 0 and not section.different_first_page_header_footer:
+                    #     section.header.is_linked_to_previous = False
+                    #     section.footer.is_linked_to_previous = False
 
-                    if self._process_header_footer(section):
-                        modified = True
+                    # if self._process_header_footer(section):
+                    #     modified = True
 
             # Save the document regardless; adjust if you wish to save only modified files.
             output_file = output_path / file_path.name

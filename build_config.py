@@ -1,6 +1,7 @@
 """Configuration for building executable."""
 import sys
 from pathlib import Path
+from PyInstaller.utils.hooks import collect_data_files
 
 # Basic Information
 APP_NAME = "wr-cl"
@@ -22,6 +23,11 @@ MAIN_SCRIPT = "src/cli.py"
 DATA_FILES = [
     ('config.json.template', 'config.json.template'),
 ]
+# 自动收集 python‑docx 模块中 templates 目录下的所有文件，并添加到 DATA_FILES 中
+# 显式指定包名和子目录（兼容不同安装方式）
+docx_templates = collect_data_files(
+    "docx", subdir="templates", include_py_files=False)
+DATA_FILES += docx_templates
 
 # Hidden Imports
 HIDDEN_IMPORTS = [
