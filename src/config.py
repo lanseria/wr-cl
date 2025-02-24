@@ -3,8 +3,10 @@ import json
 import logging
 from pathlib import Path
 from typing import Dict, Any
+from src.logger_config import setup_logger
 
-logger = logging.getLogger(__name__)
+logger = setup_logger(
+    "src.config", level="debug")
 
 DEFAULT_CONFIG = {
     "replacements": {
@@ -32,21 +34,23 @@ DEFAULT_CONFIG = {
     }
 }
 
+
 def create_default_config(config_path: str) -> None:
     """Create a default configuration file."""
     with open(config_path, 'w', encoding='utf-8') as f:
         json.dump(DEFAULT_CONFIG, f, indent=2, ensure_ascii=False)
     logger.info(f"Created default configuration file at {config_path}")
 
+
 def load_config(config_path: str) -> Dict[str, Any]:
     """Load configuration from a JSON file."""
     config_file = Path(config_path)
-    
+
     if not config_file.exists():
         logger.warning(f"Configuration file not found at {config_path}")
         create_default_config(config_path)
         return DEFAULT_CONFIG
-    
+
     try:
         with open(config_file, 'r', encoding='utf-8') as f:
             config = json.load(f)

@@ -105,7 +105,7 @@ isort .
 
 ```bash
 rm -rf dist/ build/
-/usr/bin/python3 build.py
+python build.py
 ```
 
 5. 运行

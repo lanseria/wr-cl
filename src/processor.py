@@ -1,13 +1,10 @@
 """Document processing functionality."""
-import logging
+from src.logger_config import setup_logger
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Dict, Any, List
 from docx.text.paragraph import Paragraph
 from docx import Document
-
-# 在文件开头添加或修改 logger 定义
-logger = logging.getLogger("src.processor")
 
 
 class DocumentProcessor:
@@ -23,21 +20,22 @@ class DocumentProcessor:
         self.pattern_type = self.replacements["pattern_type"]
         self.rules = self.replacements["rules"]
 
+        # Set the log level from config if available, otherwise default remains
+        self.logger = setup_logger(
+            "src.processor", level=config.get("log_level", "debug"))
+
     def _get_files_to_process(self, input_path: Path) -> List[Path]:
         """Get list of files to process based on configured file types."""
         files = []
         for file_type in self.file_settings["file_types"]:
-            # 确保文件类型以点号开头
             if not file_type.startswith('.'):
                 file_type = f'.{file_type}'
-            # 使用 rglob 来递归搜索所有匹配的文件
             files.extend(input_path.rglob(f'*{file_type}'))
 
-        # 记录找到的文件
-        logger.info(f"Found {len(files)} files to process in {input_path}")
+        self.logger.info(
+            f"Found {len(files)} files to process in {input_path}")
         for file in files:
-            logger.debug(f"Found file: {file}")
-
+            self.logger.debug(f"Found file: {file}")
         return files
 
     def process_all(self) -> None:
@@ -53,7 +51,7 @@ class DocumentProcessor:
 
         files_to_process = self._get_files_to_process(input_path)
         if not files_to_process:
-            logger.warning("No files found to process")
+            self.logger.warning("No files found to process")
             return
 
         with ThreadPoolExecutor(max_workers=self.advanced["max_workers"]) as executor:
@@ -67,14 +65,15 @@ class DocumentProcessor:
                 try:
                     future.result(timeout=self.advanced["timeout"])
                 except Exception as e:
-                    logger.error(f"Error processing {file_path}: {str(e)}")
+                    self.logger.error(
+                        f"Error processing {file_path}: {str(e)}")
 
     def process_document(self, file_path: Path, output_path: Path) -> None:
         """Process a single document."""
-        logger.info(f"Processing document: {file_path}")
+        self.logger.info(f"Processing document: {file_path}")
 
         if self.dry_run:
-            logger.info(f"Dry run - would process {file_path}")
+            self.logger.info(f"Dry run - would process {file_path}")
             self._preview_changes(file_path)
             return
 
@@ -82,12 +81,10 @@ class DocumentProcessor:
             doc = Document(str(file_path))
             modified = False
 
-            # Process each paragraph in the document
             for paragraph in doc.paragraphs:
                 if self._process_paragraph(paragraph):
                     modified = True
 
-            # Process tables
             for table in doc.tables:
                 for row in table.rows:
                     for cell in row.cells:
@@ -95,19 +92,19 @@ class DocumentProcessor:
                             if self._process_paragraph(paragraph):
                                 modified = True
 
-            if modified and not self.dry_run:  # 确保在dry run模式下不保存文件
+            if modified and not self.dry_run:
                 output_file = output_path / file_path.name
                 doc.save(str(output_file))
-                logger.info(f"Saved modified document to {output_file}")
+                self.logger.info(f"Saved modified document to {output_file}")
             else:
-                logger.info(f"No changes needed for {file_path}")
+                self.logger.info(f"No changes needed for {file_path}")
 
         except Exception as e:
-            logger.error(f"Error processing {file_path}: {str(e)}")
+            self.logger.error(f"Error processing {file_path}: {str(e)}")
             raise
 
     def _process_paragraph(self, paragraph: Paragraph) -> bool:
-        """Process a single paragraph, returns True if any changes were made."""
+        """Process a single paragraph; returns True if any changes were made."""
         if not paragraph.text:
             return False
 
@@ -117,26 +114,14 @@ class DocumentProcessor:
             new_text = rule["new_text"]
 
             if old_text in paragraph.text:
-                # Store the original text
                 p_text = paragraph.text
-
-                # Only modify if not in dry run mode
                 if not self.dry_run:
-                    # Clear the paragraph
                     for run in paragraph.runs:
                         run.text = ""
-
-                    # Replace text
                     new_p_text = p_text.replace(old_text, new_text)
-
-                    # Add back the text in a single run
                     run = paragraph.add_run(new_p_text)
-
-                    # Apply basic formatting
                     run.bold = True
-
                 modified = True
-
         return modified
 
     def _preview_changes(self, file_path: Path) -> None:
@@ -162,15 +147,16 @@ class DocumentProcessor:
                         })
 
             if changes:
-                logger.info(f"\nPreview of changes for {file_path}:")
+                self.logger.info(f"\nPreview of changes for {file_path}:")
                 for i, change in enumerate(changes, 1):
-                    logger.info(f"\nChange {i}:")
-                    logger.info(f"Old text: {change['old_text']}")
-                    logger.info(f"New text: {change['new_text']}")
-                    logger.info(f"Context: {change['context']}")
+                    self.logger.info(f"\nChange {i}:")
+                    self.logger.info(f"Old text: {change['old_text']}")
+                    self.logger.info(f"New text: {change['new_text']}")
+                    self.logger.info(f"Context: {change['context']}")
             else:
-                logger.info(f"No changes would be made to {file_path}")
+                self.logger.info(f"No changes would be made to {file_path}")
 
         except Exception as e:
-            logger.error(f"Error previewing changes for {file_path}: {str(e)}")
+            self.logger.error(
+                f"Error previewing changes for {file_path}: {str(e)}")
             raise
