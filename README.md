@@ -122,7 +122,7 @@ dist\wr-cl.exe --config config.json
 ./dist/wr-cl --config config.json
 ```
 
-发布
+6. 发布
 
 ```bash
 git tag -d v1.1.0 
