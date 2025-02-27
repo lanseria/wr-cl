@@ -70,11 +70,11 @@ files_to_add=("$VERSION_FILE")
 [[ -f $INIT_PY ]] && files_to_add+=("$INIT_PY")
 
 # Commit changes
-# git add "${files_to_add[@]}"
-# git commit -m "chore(release): bump version to v$new_version"
+git add "${files_to_add[@]}"
+git commit -m "chore(release): bump version to v$new_version"
 
 # Create git tag
-# git tag -a "v$new_version" -m "Release v$new_version"
+git tag -a "v$new_version" -m "Release v$new_version"
 
 echo "Version update complete! New version: $new_version"
 echo "Please use 'git push --tags' to push the tags"
