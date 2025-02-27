@@ -146,11 +146,18 @@ jobs:
     - name: Generate changelog
       id: changelog
       run: |
-        if [[ -z "${{ steps.previous_tag.outputs.previous_tag }}" ]]; then
-          echo "CHANGELOG=\"## 初始版本\n- 首次发布\"" >> $GITHUB_ENV
+        if [[ -z "$PREVIOUS_TAG" ]]; then
+          # 首次发布处理
+          echo "CHANGELOG<<EOF" >> $GITHUB_ENV
+          echo "## 初始版本" >> $GITHUB_ENV
+          echo "- 首次发布" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
         else
-          COMMIT_LOG=$(git log --pretty=format:"- %s [%h]" "${{ steps.previous_tag.outputs.previous_tag }}"..${{ github.ref_name }})
-          echo "CHANGELOG=\"## 变更记录\n$COMMIT_LOG\"" >> $GITHUB_ENV
+          # 获取两次tag间的提交记录
+          echo "CHANGELOG<<EOF" >> $GITHUB_ENV
+          echo "## 变更记录" >> $GITHUB_ENV
+          git log --pretty=format:"- %s [%h]" "$PREVIOUS_TAG"..$CURRENT_TAG >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
         fi
 
     - name: Create Release
