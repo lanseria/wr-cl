@@ -124,6 +124,35 @@ jobs:
       id: date
       run: echo "DATE=$(date -u +'%Y-%m-%d')" >> $GITHUB_OUTPUT
       
+    - name: Get previous tag
+      id: previous_tag
+      run: |
+        # 获取所有 tag 并按时间排序，找到当前 tag 的前一个
+        git fetch --tags --force
+        TAGS=($(git tag --sort=-creatordate))
+        CURRENT_TAG="${{ github.ref_name }}"
+        
+        # 遍历 tag 列表寻找上一个 tag
+        PREVIOUS_TAG=""
+        for ((i=0; i<${#TAGS[@]}; i++)); do
+          if [[ "${TAGS[i]}" == "$CURRENT_TAG" && $i -lt $((${#TAGS[@]}-1)) ]]; then
+            PREVIOUS_TAG="${TAGS[i+1]}"
+            break
+          fi
+        done
+
+        echo "previous_tag=$PREVIOUS_TAG" >> $GITHUB_OUTPUT
+
+    - name: Generate changelog
+      id: changelog
+      run: |
+        if [[ -z "${{ steps.previous_tag.outputs.previous_tag }}" ]]; then
+          echo "CHANGELOG=\"## 初始版本\n- 首次发布\"" >> $GITHUB_ENV
+        else
+          COMMIT_LOG=$(git log --pretty=format:"- %s [%h]" "${{ steps.previous_tag.outputs.previous_tag }}"..${{ github.ref_name }})
+          echo "CHANGELOG=\"## 变更记录\n$COMMIT_LOG\"" >> $GITHUB_ENV
+        fi
+
     - name: Create Release
       uses: softprops/action-gh-release@v2
       with:
@@ -137,46 +166,24 @@ jobs:
         body: |
           ## Word Document Content Replacer CLI Tool v${{ steps.get_version.outputs.VERSION }}
           
-          **Release Date:** ${{ steps.date.outputs.DATE }}
+          ​**发布日期:**​ ${{ steps.date.outputs.DATE }}
+          ​**构建提交:**​ ${{ github.sha }}
           
-          ### Installation
-          1. Download the appropriate version for your operating system
-          2. Extract the archive:
-             ```bash
-             # Linux/macOS
-             tar xzf wr-cl-*.tar.gz
-             
-             # Windows (PowerShell)
-             tar -xzf wr-cl-windows.tar.gz
-             ```
-          3. Copy `config.json.template` to `config.json` and modify as needed
+          ${{ env.CHANGELOG }}
           
-          ### Usage
-          ```bash
-          # Show help
-          ./wr-cl --help
+          ### 安装指南
+          1. 下载对应操作系统的压缩包
+          2. 解压并配置：
+            ```bash
+            # Linux/macOS
+            tar xzf wr-cl-*.tar.gz
+            
+            # Windows
+            tar -xzf wr-cl-windows.tar.gz
+            ```
+          3. 复制 `config.json.template` 为 `config.json` 并按需修改
           
-          # Run with config
-          ./wr-cl --config config.json
-          
-          # Run in dry-run mode
-          ./wr-cl --config config.json --dry-run
-          
-          # Set log level
-          ./wr-cl --config config.json --log-level debug
-          ```
-          
-          ### System Requirements
-          - Windows/macOS/Linux
-          - No additional dependencies required (bundled)
-          
-          ### Build Information
-          - Built with Python 3.11
-          - PyInstaller bundle
-          - Build date: ${{ steps.date.outputs.DATE }}
-          - Build commit: ${{ github.sha }}
-          
-          ### SHA256 Checksums
+          ### SHA256 校验和
           ```
           ${{ hashFiles('*.tar.gz') }}
           ```
