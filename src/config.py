@@ -1,6 +1,5 @@
 """Configuration management for wr-cl."""
 import json
-import logging
 from pathlib import Path
 from typing import Dict, Any
 from src.logger_config import setup_logger
@@ -25,7 +24,6 @@ DEFAULT_CONFIG = {
     },
     "file_settings": {
         "input_path": "./docs",
-        "file_types": [".docx"],
         "output_path": "./modified"
     },
     "advanced": {

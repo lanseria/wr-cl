@@ -16,7 +16,6 @@
     "file_settings": {
         "input_path": "./input",
         "output_path": "./output",
-        "file_types": [".docx"]
     },
     "advanced": {
         "max_workers": 4,

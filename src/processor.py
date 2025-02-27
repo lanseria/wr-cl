@@ -27,17 +27,28 @@ class DocumentProcessor:
         )
 
     def _get_files_to_process(self, input_path: Path) -> List[Path]:
-        """Get list of files to process based on configured file types."""
-        files = []
-        for file_type in self.file_settings["file_types"]:
-            if not file_type.startswith('.'):
-                file_type = f'.{file_type}'
-            files.extend(input_path.rglob(f'*{file_type}'))
+        """
+        Get list of .docx files to process while excluding temporary files.
+
+        Args:
+            input_path (Path): The directory path to search for .docx files
+
+        Returns:
+            List[Path]: List of valid .docx files to process
+        """
+        # Only process .docx files
+        file_type = '.docx'
+        # Get all .docx files
+        all_files = list(input_path.rglob(f'*{file_type}'))
+
+        # Filter out temporary files (those starting with ~$)
+        files = [f for f in all_files if not f.name.startswith('~$')]
 
         self.logger.info(
-            f"Found {len(files)} files to process in {input_path}")
+            f"Found {len(files)} valid .docx files to process in {input_path}")
         for file in files:
             self.logger.debug(f"Found file: {file}")
+
         return files
 
     def process_all(self) -> None:

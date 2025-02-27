@@ -27,7 +27,6 @@ def test_config():
         },
         "file_settings": {
             "input_path": "./tests/test_docs",
-            "file_types": [".docx"],
             "output_path": "./tests/output"
         },
         "advanced": {

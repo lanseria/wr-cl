@@ -42,7 +42,6 @@ word replacer command line tool
   },
   "file_settings": {
     "input_path": "./docs",
-    "file_types": [".docx"],
     "output_path": "./modified"
   },
   "advanced": {
